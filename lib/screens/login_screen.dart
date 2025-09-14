@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,210 +9,153 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: SingleChildScrollView(
-        child: Column(
-          children: [
-            // 상단 여백
-            const SizedBox(height: 60),
-            
-            // 로고 및 앱 이름
-            _buildHeader(),
-            
-            const SizedBox(height: 40),
-            
-            // 환영 메시지
-            _buildWelcomeMessage(),
-            
-            const SizedBox(height: 60),
-            
-            // 소셜 로그인 버튼들
-            _buildSocialLoginButtons(),
-            
-            const SizedBox(height: 40),
-            
-            // 하단 약관 동의
-            _buildTermsAgreement(),
-            
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        // 앱 로고
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00FFAA),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00FFAA).withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+      body: Stack(
+        children: [
+          
+          // 메인 콘텐츠
+          Column(
+            children: [
+              const SizedBox(height: 44), // 상태바 높이만큼 여백
+              
+              // 로고 영역
+              Expanded(
+                child: Center(
+                  child: _buildLogo(),
+                ),
               ),
+              
+              const SizedBox(height: 40),
             ],
           ),
-          child: const Icon(
-            Icons.cleaning_services,
-            size: 60,
-            color: Colors.white,
+
+          // 로그인 버튼들 (Figma 절대좌표 비율 기반 위치)
+          // Kakao: x=15, y=467, w=343, h=50 on 375x812
+          Positioned(
+            left: size.width * (15 / 375),
+            top: size.height * (467 / 812),
+            width: size.width * (343 / 375),
+            height: 50,
+            child: _buildKakaoLoginButton(),
           ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // 앱 이름
-        const Text(
-          'PAAS',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-            letterSpacing: 2,
+          // Naver: x=15, y=534, w=343, h=50 on 375x812
+          Positioned(
+            left: size.width * (15 / 375),
+            top: size.height * (534 / 812),
+            width: size.width * (343 / 375),
+            height: 50,
+            child: _buildNaverLoginButton(),
           ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        // 앱 설명
-        const Text(
-          '청소 관리 앱',
-          style: TextStyle(
-            fontSize: 16,
-            color: Color(0xFF666666),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+          
+          // 하단 홈 인디케이터
+          _buildHomeIndicator(),
+        ],
+      ),
     );
   }
 
-  Widget _buildWelcomeMessage() {
-    return Column(
-      children: [
-        const Text(
-          '환영합니다!',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+  Widget _buildLogo() {
+    return Container(
+      width: 132,
+      height: 132,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD1D6E6).withOpacity(0.25),
+            offset: const Offset(0, 4),
+            blurRadius: 10,
+            spreadRadius: 7,
           ),
-        ),
-        
-        const SizedBox(height: 12),
-        
-        const Text(
-          '간편하게 로그인하고\n청소 관리를 시작해보세요',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            color: Color(0xFF666666),
-            height: 1.5,
+        ],
+      ),
+      child: Stack(
+        children: [
+          // 메인 로고 배경
+          Center(
+            child: Container(
+              width: 110,
+              height: 110,
+              child: Image.asset(
+                'assets/images/app_icon.png',
+                fit: BoxFit.contain,
+              ),
+            ),
           ),
-        ),
-      ],
+          // 작은 원
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: const Color(0xFF63C2F1).withOpacity(0.8),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildSocialLoginButtons() {
-    return Column(
-      children: [
-        // 구글 로그인
-        _buildSocialLoginButton(
-          'Google로 계속하기',
-          const Color(0xFF4285F4),
-          onPressed: () => _handleGoogleLogin(),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // 카카오 로그인
-        _buildSocialLoginButton(
-          '카카오로 계속하기',
-          const Color(0xFFFEE500),
-          onPressed: () => _handleKakaoLogin(),
-          textColor: const Color(0xFF3C1E1E),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // 네이버 로그인
-        _buildSocialLoginButton(
-          '네이버로 계속하기',
-          const Color(0xFF03C75A),
-          onPressed: () => _handleNaverLogin(),
-        ),
-      ],
+  Widget _buildLoginButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      child: Column(
+        children: [
+          // 카카오 로그인 버튼
+          _buildKakaoLoginButton(),
+          
+          const SizedBox(height: 17),
+          
+          // 네이버 로그인 버튼
+          _buildNaverLoginButton(),
+        ],
+      ),
     );
   }
 
-  Widget _buildSocialLoginButton(
-    String text,
-    Color backgroundColor, {
-    Color? textColor,
-    required VoidCallback onPressed,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: Provider.of<AuthService>(context).isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor ?? Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          side: BorderSide(
-            color: backgroundColor == const Color(0xFFFEE500) 
-              ? const Color(0xFFE5E5E5) 
-              : Colors.transparent,
-            width: 1,
-          ),
+  Widget _buildKakaoLoginButton() {
+    return GestureDetector(
+      onTap: () {
+        // 카카오 로그인 로직
+        _navigateToHome();
+      },
+      child: Container(
+        width: 343,
+        height: 50,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8E049), // 카카오 노란색
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 아이콘 (플레이스홀더)
+            // 카카오 아이콘
             Container(
               width: 24,
               height: 24,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(
-                _getIconForSocial(text),
-                size: 16,
-                color: backgroundColor,
+              child: Image.asset(
+                'assets/images/kakao.png',
+                fit: BoxFit.contain,
               ),
             ),
-            
-            const SizedBox(width: 12),
-            
-            Text(
-              text,
+            const SizedBox(width: 10),
+            // 카카오 로그인 텍스트
+            const Text(
+              '카카오로 로그인',
               style: TextStyle(
+                fontFamily: 'Pretendard',
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: textColor ?? Colors.white,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
               ),
             ),
           ],
@@ -222,174 +164,75 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  IconData _getIconForSocial(String text) {
-    if (text.contains('Google')) return Icons.g_mobiledata;
-    if (text.contains('카카오')) return Icons.chat_bubble;
-    if (text.contains('네이버')) return Icons.nat;
-    return Icons.person;
-  }
-
-
-
-  Widget _buildTermsAgreement() {
-    return Column(
-      children: [
-        const Text(
-          '로그인하면 다음에 동의하는 것으로 간주됩니다',
-          style: TextStyle(
-            fontSize: 12,
-            color: Color(0xFF999999),
-          ),
+  Widget _buildNaverLoginButton() {
+    return GestureDetector(
+      onTap: () {
+        // 네이버 로그인 로직
+        _navigateToHome();
+      },
+      child: Container(
+        width: 343,
+        height: 50,
+        decoration: BoxDecoration(
+          color: const Color(0xFF66BD59), // 네이버 초록색
+          borderRadius: BorderRadius.circular(12),
         ),
-        
-        const SizedBox(height: 8),
-        
-        Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            GestureDetector(
-              onTap: () => _showTermsDialog('이용약관'),
-              child: const Text(
-                '이용약관',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF00FFAA),
-                  decoration: TextDecoration.underline,
-                ),
+            // 네이버 아이콘
+            Container(
+              width: 24,
+              height: 24,
+              child: Image.asset(
+                'assets/images/naver.png',
+                fit: BoxFit.contain,
               ),
             ),
-            
+            const SizedBox(width: 10),
+            // 네이버 로그인 텍스트
             const Text(
-              ' 및 ',
+              '네이버로 로그인',
               style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF999999),
-              ),
-            ),
-            
-            GestureDetector(
-              onTap: () => _showTermsDialog('개인정보처리방침'),
-              child: const Text(
-                '개인정보처리방침',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF00FFAA),
-                  decoration: TextDecoration.underline,
-                ),
+                fontFamily: 'Pretendard',
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
               ),
             ),
           ],
         ),
-      ],
-    );
-  }
-
-  // 소셜 로그인 처리 함수들
-  void _handleGoogleLogin() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    try {
-      final success = await authService.signInWithGoogle();
-      
-      if (success && mounted) {
-        _showSuccessDialog('구글 로그인');
-      } else if (mounted) {
-        _showErrorDialog('구글 로그인에 실패했습니다.');
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('구글 로그인 중 오류가 발생했습니다.');
-      }
-    }
-  }
-
-  void _handleKakaoLogin() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    try {
-      final success = await authService.signInWithKakao();
-      
-      if (success && mounted) {
-        _showSuccessDialog('카카오 로그인');
-      } else if (mounted) {
-        _showErrorDialog('카카오 로그인에 실패했습니다.');
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('카카오 로그인 중 오류가 발생했습니다.');
-      }
-    }
-  }
-
-  void _handleNaverLogin() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    try {
-      final success = await authService.signInWithNaver();
-      
-      if (success && mounted) {
-        _showSuccessDialog('네이버 로그인');
-      } else if (mounted) {
-        _showErrorDialog('네이버 로그인에 실패했습니다.');
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('네이버 로그인 중 오류가 발생했습니다.');
-      }
-    }
-  }
-
-
-
-  // 다이얼로그 함수들
-  void _showSuccessDialog(String loginType) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('로그인 성공'),
-        content: Text('$loginType이 완료되었습니다.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-            child: const Text('확인'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('로그인 실패'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
+  Widget _buildHomeIndicator() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 34,
+        color: Colors.white,
+        child: Center(
+          child: Container(
+            width: 134,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(100),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  void _showTermsDialog(String title) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text('$title 내용이 여기에 표시됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+  void _navigateToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
   }
-} 
+}
+

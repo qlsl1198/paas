@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'notification_screen.dart';
+
+enum WeatherType {
+  cloudy, // 흐림
+  sunny,  // 맑음
+  rainy   // 비
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +20,75 @@ class _HomeScreenState extends State<HomeScreen> {
   List<int> cleanedDays = [4, 6];
   DateTime currentDate = DateTime.now();
   DateTime displayedMonth = DateTime.now();
+  WeatherType currentWeather = WeatherType.cloudy; // 기본값: 흐림
+
+  String getWeatherText() {
+    switch (currentWeather) {
+      case WeatherType.cloudy:
+        return '날씨가 흐려요';
+      case WeatherType.sunny:
+        return '날씨가 맑아요';
+      case WeatherType.rainy:
+        return '비가 와요';
+    }
+  }
+
+  Widget getWeatherBackground() {
+    switch (currentWeather) {
+      case WeatherType.cloudy:
+        return Stack(
+          children: [
+            // 노란색 원 (Ellipse 4) - Figma 정확한 위치: x: 255, y: 163
+            Positioned(
+              left: 255,
+              top: 163,
+              child: Container(
+                width: 77,
+                height: 77,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFCB2D),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            // 구름 Vector - Figma 정확한 위치: x: 144, y: 178
+            Positioned(
+              left: 144,
+              top: 178,
+              child: Container(
+                width: 206,
+                height: 125,
+                child: SvgPicture.asset(
+                  'assets/images/cloud.svg',
+                  width: 206,
+                  height: 125,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            // 해 Vector - Figma 정확한 위치: x: -122, y: 121 (카드 밖으로 나감)
+            Positioned(
+              left: -122,
+              top: 121,
+              child: Container(
+                width: 206,
+                height: 125,
+                child: SvgPicture.asset(
+                  'assets/images/sun.svg',
+                  width: 206,
+                  height: 125,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
+        );
+      case WeatherType.sunny:
+        return Container(); // 빈 컨테이너
+      case WeatherType.rainy:
+        return Container(); // 빈 컨테이너
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildCleaningCompleteCard(),
                     const SizedBox(height: 20),
                     _buildMonthlyCleaningRecord(),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -44,67 +122,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTopNavigationBar() {
     return Container(
       height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      color: Colors.white,
+      child: Stack(
         children: [
-          GestureDetector(
-            onTap: () => _showMenu(context),
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEEEEE),
-                borderRadius: BorderRadius.circular(4),
+          Center(
+            child: Text(
+              '홈',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
               ),
-              child: const Icon(Icons.menu, size: 16, color: Colors.black),
             ),
           ),
-          const SizedBox(width: 20),
-          GestureDetector(
-            onTap: () => _showSearch(context),
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEEEEE),
-                borderRadius: BorderRadius.circular(4),
+          Positioned(
+            right: 16,
+            top: 13,
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
               ),
-              child: const Icon(Icons.search, size: 16, color: Colors.black),
-            ),
-          ),
-          const Spacer(),
-          const Text(
-            '홈',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => _showNotifications(context),
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEEEEE),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(Icons.notifications, size: 16, color: Colors.black),
-            ),
-          ),
-          const SizedBox(width: 20),
-          GestureDetector(
-            onTap: () => _showSettings(context),
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEEEEE),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(Icons.settings, size: 16, color: Colors.black),
+              child: const Icon(Icons.notifications_outlined, size: 24, color: Colors.black),
             ),
           ),
         ],
@@ -112,22 +151,70 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _changeWeather() {
+    setState(() {
+      switch (currentWeather) {
+        case WeatherType.cloudy:
+          currentWeather = WeatherType.sunny;
+          break;
+        case WeatherType.sunny:
+          currentWeather = WeatherType.rainy;
+          break;
+        case WeatherType.rainy:
+          currentWeather = WeatherType.cloudy;
+          break;
+      }
+    });
+  }
+
   Widget _buildCleaningCompleteCard() {
-    return Container(
-      width: double.infinity,
-      height: 166,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8ECF6),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
+    return GestureDetector(
+      onTap: _changeWeather,
+      child: Container(
+        height: 358,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8ECF6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            getWeatherBackground(),
+            Positioned(
             left: 24,
             top: 56,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  '미래님,',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w300,
+                    color: Color(0xFF111111),
+                    height: 1.2,
+                  ),
+                ),
+                Text(
+                  getWeatherText(),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111111),
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '오늘 하수구 주변을\n한 번만 살펴봐 주세요.',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF4A4A4A),
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   '${currentDate.year}년 ${currentDate.month}월 ${currentDate.day}일',
                   style: const TextStyle(
@@ -136,37 +223,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xFF686868),
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  '오늘 하수구 주변을\n한 번만 살펴봐 주세요.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF111111),
-                    height: 1.2,
-                  ),
-                ),
               ],
             ),
           ),
-          Positioned(
-            right: 34,
-            top: 51,
-            child: Container(
-              width: 58,
-              height: 58,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFCB2D),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 30,
-              ),
-            ),
-          ),
         ],
+      ),
       ),
     );
   }
@@ -175,44 +236,30 @@ class _HomeScreenState extends State<HomeScreen> {
     final cleanedCount = cleanedDays.length;
     
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _previousMonth(),
-                  child: const Icon(Icons.chevron_left, size: 24),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${displayedMonth.year}년 ${displayedMonth.month}월',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _nextMonth(),
-                  child: const Icon(Icons.chevron_right, size: 24),
-                ),
-              ],
+            GestureDetector(
+              onTap: () => _previousMonth(),
+              child: const Icon(Icons.chevron_left, size: 24, color: Color(0xFF4A4A4A)),
             ),
             Text(
-              '청소 ${cleanedCount}회',
+              '${displayedMonth.year}년 ${displayedMonth.month}월',
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,
               ),
             ),
+            GestureDetector(
+              onTap: () => _nextMonth(),
+              child: const Icon(Icons.chevron_right, size: 24, color: Color(0xFF4A4A4A)),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 19),
         Row(
           children: ['일', '월', '화', '수', '목', '금', '토'].map((day) {
             return Expanded(
@@ -233,14 +280,14 @@ class _HomeScreenState extends State<HomeScreen> {
           }).toList(),
         ),
         _buildCalendarGrid(),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         GestureDetector(
           onTap: () => _completeCleaning(context),
           child: Container(
             width: double.infinity,
             height: 50,
             decoration: BoxDecoration(
-              color: const Color(0xFF00FFAA),
+              color: const Color(0xFF2E7DFF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Center(
@@ -313,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color textColor = Colors.black;
     
     if (isCleaned) {
-      backgroundColor = const Color(0xFF00FFAA);
+      backgroundColor = const Color(0xFF2E7DFF);
       textColor = Colors.white;
     } else if (isToday) {
       backgroundColor = const Color(0xFFFFCB2D);
@@ -350,7 +397,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomTabBar() {
     return Container(
       height: 90,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -378,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF00FFAA) : const Color(0xFFAAAAAA),
+              color: isSelected ? const Color(0xFF2E7DFF) : const Color(0xFFAAAAAA),
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -387,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? const Color(0xFF00FFAA) : const Color(0xFFAAAAAA),
+                color: isSelected ? const Color(0xFF2E7DFF) : const Color(0xFFAAAAAA),
               ),
             ),
           ],
@@ -510,21 +556,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showNotifications(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('알림'),
-        content: const Text('새로운 알림이 없습니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showSettings(BuildContext context) {
     showDialog(
@@ -593,4 +624,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-} 
+}
