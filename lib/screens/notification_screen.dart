@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -50,24 +51,29 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // 상단 네비게이션 바 (Figma: Group 177178)
-          _buildTopNavigationBar(context),
-          // 알림 리스트 (Figma: Frame 148)
-          Expanded(
-            child: _buildNotificationList(),
-          ),
-          // 하단 홈 인디케이터 (Figma: Home Indicator/Light)
-          _buildHomeIndicator(),
-        ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Column(
+          children: [
+            // 상단 네비게이션 바 (Figma: Group 177178)
+            _buildTopNavigationBar(context),
+            // 알림 리스트 (Figma: Frame 148)
+            Expanded(
+              child: _buildNotificationList(),
+            ),
+            // 하단 홈 인디케이터 (Figma: Home Indicator/Light)
+            _buildHomeIndicator(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTopNavigationBar(BuildContext context) {
+    final padding = MediaQuery.of(context).padding;
     return Container(
-      height: 50,
+      height: 50 + padding.top * 0.0,
       color: Colors.white,
       child: Stack(
         children: [
@@ -235,20 +241,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _buildHomeIndicator() {
-    return Container(
-      height: 34,
-      color: Colors.white,
-      child: Center(
-        child: Container(
-          width: 134,
-          height: 5,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(100),
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   void _showDeleteConfirmDialog() {

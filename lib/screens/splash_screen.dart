@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show lerpDouble; // for double interpolation
-import 'login_screen.dart';
 
 // 이미지를 활용한 단계적 스플래시 시퀀스 구현
 
@@ -13,6 +12,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   late AnimationController _controller;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -20,7 +20,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _controller = AnimationController(
       duration: const Duration(milliseconds: 4200),
       vsync: this,
-    )..forward();
+    )
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted && !_navigated) {
+          _navigated = true;
+          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        }
+      })
+      ..forward();
+
   }
 
   double _intervalValue(double t, double begin, double end, [Curve curve = Curves.linear]) {
@@ -47,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           // 메인 로고 영역
           _buildSequence(),
           
-          // 하단 홈 인디케이터
+          // 하단 홈 인디케이터 (커스텀 제거)
           _buildHomeIndicator(),
         ],
       ),
@@ -103,8 +111,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         // app_icon cross-fade (마지막 구간에서 splash3->app_icon 전환)
         final iconFade = _intervalValue(t, 0.80, 0.88, Curves.easeIn);
 
-        // 버튼 페이드인
-        final buttonsOpacity = _intervalValue(t, 0.85, 1.00, Curves.easeIn);
 
         return Stack(
           children: [
@@ -180,129 +186,26 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ),
 
-            // 로그인 버튼들 페이드인
-            if (buttonsOpacity > 0)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: size.height * 0.12,
-                child: Opacity(
-                  opacity: buttonsOpacity,
-                  child: _buildLoginButtonsInline(),
-                ),
-              ),
+            // // 로그인 버튼들 페이드인
+            // if (buttonsOpacity > 0)
+            //   Positioned(
+            //     left: 0,
+            //     right: 0,
+            //     bottom: size.height * 0.12,
+            //     child: Opacity(
+            //       opacity: buttonsOpacity,
+            //       child: _buildLoginButtonsInline(),
+            //     ),
+            //   ),
           ],
         );
       },
     );
   }
 
-  Widget _buildLoginButtonsInline() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildKakaoButton(),
-          const SizedBox(height: 17),
-          _buildNaverButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKakaoButton() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      },
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8E049),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.chat_bubble, color: Colors.black, size: 22),
-              SizedBox(width: 8),
-              Text(
-                '카카오로 로그인',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNaverButton() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      },
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: const Color(0xFF66BD59),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.login, color: Colors.white, size: 22),
-              SizedBox(width: 8),
-              Text(
-                '네이버로 로그인',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildHomeIndicator() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 34,
-        color: Colors.white,
-        child: Center(
-          child: Container(
-            width: 134,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 
@@ -340,10 +243,10 @@ class SplashLogoPainter extends CustomPainter {
     // 그라데이션 스트로크
     final gradient = LinearGradient(
       colors: [
-        const Color(0xFFB1E5FF).withOpacity(0),
-        const Color(0xFFC0EAFF).withOpacity(0.4),
+        const Color(0xFFB1E5FF).withValues(alpha: 0),
+        const Color(0xFFC0EAFF).withValues(alpha: 0.4),
         const Color(0xFFA1E0FF),
-        const Color(0xFFE0F5FF).withOpacity(0.4),
+        const Color(0xFFE0F5FF).withValues(alpha: 0.4),
       ],
       stops: const [0.0, 0.27, 0.56, 0.92],
     );
@@ -368,7 +271,7 @@ class SplashLogoPainter extends CustomPainter {
       final circlePaint = Paint()
         ..shader = LinearGradient(
           colors: [
-            const Color(0xFF63C2F1).withOpacity(0),
+            const Color(0xFF63C2F1).withValues(alpha: 0),
             const Color(0xFF63C2F1),
           ],
           begin: Alignment.topCenter,
@@ -381,75 +284,6 @@ class SplashLogoPainter extends CustomPainter {
         circlePaint,
       );
     }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
-// 신호 아이콘 페인터
-class SignalIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.fill;
-
-    // 신호 막대들
-    canvas.drawRect(Rect.fromLTWH(2, 10, 3, 4), paint);
-    canvas.drawRect(Rect.fromLTWH(6.5, 6, 3, 8), paint);
-    canvas.drawRect(Rect.fromLTWH(11, 4, 3, 10), paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
-// WiFi 아이콘 페인터
-class WifiIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    // WiFi 신호 그리기
-    final path = Path();
-    path.moveTo(8, 12);
-    path.arcToPoint(const Offset(4, 8), radius: const Radius.circular(4));
-    path.moveTo(8, 12);
-    path.arcToPoint(const Offset(2, 6), radius: const Radius.circular(6));
-    path.moveTo(8, 12);
-    path.arcToPoint(const Offset(0, 4), radius: const Radius.circular(8));
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
-// 배터리 아이콘 페인터
-class BatteryIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    // 배터리 외곽선
-    canvas.drawRect(Rect.fromLTWH(0, 1, 23, 12), paint);
-    
-    // 배터리 극
-    canvas.drawRect(Rect.fromLTWH(24, 5, 1, 4), paint);
-    
-    // 배터리 내부 (100%)
-    final fillPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(Rect.fromLTWH(2, 3, 19, 8), fillPaint);
   }
 
   @override
