@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'home_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -8,7 +14,37 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  int selectedTabIndex = 1; // 지도 탭이 선택됨
+  int selectedTabIndex = 1; // 지도 탭이 선택된 상태
+  final MapController _mapController = MapController();
+  double _currentZoom = 15;
+  int? _selectedIndex;
+
+  final List<Map<String, dynamic>> savedLocations = [
+    {
+      'title': '민애님의 하숙이',
+      'lastDate': '2025.07.23',
+      'count': '13회',
+      'favorite': true,
+      'lat': 37.5665,
+      'lng': 126.9780,
+    },
+    {
+      'title': '우리동네 하수구',
+      'lastDate': '2025.07.18',
+      'count': '7회',
+      'favorite': false,
+      'lat': 37.5700,
+      'lng': 126.9820,
+    },
+    {
+      'title': '학교 앞 배수로',
+      'lastDate': '2025.07.11',
+      'count': '5회',
+      'favorite': false,
+      'lat': 37.5630,
+      'lng': 126.9750,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -17,31 +53,24 @@ class _MapScreenState extends State<MapScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 상단 네비게이션 바
+            // 상단 네비게이션 바 (Group 177178) - 높이: 50px
             _buildTopNavigationBar(),
-            
             // 지도 영역
             Expanded(
               child: Stack(
+                fit: StackFit.expand,
+                clipBehavior: Clip.none,
                 children: [
-                  // 지도 배경
+                  // 지도 배경 (지도 GROUP) - 전체 화면
                   _buildMapBackground(),
-                  
-                  // 지도 위의 요소들
-                  _buildMapElements(),
-                  
-                  // 하단 카드
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildBottomCard(),
-                  ),
+                  // 플로팅 액션 버튼들
+                  _buildFloatingActionButtons(),
+                  // 하단 정보 카드 (시트가 가장 위에서 아이콘을 가리도록 마지막에 렌더링)
+                  _buildBottomInfoCard(),
                 ],
               ),
             ),
-            
-            // 하단 탭바
+            // 하단 탭바 (네비게이터) - 높이: 90px
             _buildBottomTabBar(),
           ],
         ),
@@ -52,36 +81,40 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildTopNavigationBar() {
     return Container(
       height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      color: Colors.white,
+      child: Stack(
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: const Color(0xFF6C6C6C),
-              borderRadius: BorderRadius.circular(4),
+          // 뒤로가기 버튼 (Frame 65 - mingcute:left-fill) - 위치: (16, 13)
+          Positioned(
+            left: 16,
+            top: 13,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 24,
+                height: 24,
+                child: const Icon(
+                  Icons.arrow_back_ios,
+                  size: 20,
+                  color: Colors.black,
+                ),
+              ),
             ),
-            child: const Icon(Icons.arrow_back, size: 16, color: Colors.white),
           ),
-          const Spacer(),
-          const Text(
-            '근처 하숙이들',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
+          // 중앙 제목 (가운데 정렬)
+          Positioned.fill(
+            child: Center(
+              child: Text(
+                '지도',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                  height: 1.4,
+                ),
+              ),
             ),
-          ),
-          const Spacer(),
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEEEEE),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Icon(Icons.more_vert, size: 16, color: Colors.black),
           ),
         ],
       ),
@@ -89,212 +122,308 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildMapBackground() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(8),
-        image: const DecorationImage(
-          image: NetworkImage('https://via.placeholder.com/343x520/87CEEB/FFFFFF?text=Map'),
-          fit: BoxFit.cover,
+    final LatLng initialCenter = LatLng(
+      (savedLocations.first['lat'] as double),
+      (savedLocations.first['lng'] as double),
+    );
+    return Positioned.fill(
+      child: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: initialCenter,
+          initialZoom: _currentZoom,
+          interactionOptions: const InteractionOptions(
+            flags: InteractiveFlag.all,
+          ),
         ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.paas',
+            tileProvider: CancellableNetworkTileProvider(),
+          ),
+          MarkerLayer(markers: _buildMarkers()),
+        ],
       ),
     );
   }
 
-  Widget _buildMapElements() {
-    return Stack(
-      children: [
-        // 지도 위의 마커들 (정확한 위치)
-        Positioned(
-          top: 152,
-          left: 93,
-          child: _buildMapMarker(),
-        ),
-        Positioned(
-          top: 246,
-          right: 82,
-          child: _buildMapMarker(),
-        ),
-        Positioned(
-          top: 322,
-          left: 93,
-          child: _buildMapMarker(),
-        ),
-        Positioned(
-          top: 421,
-          right: 130,
-          child: _buildMapMarker(),
-        ),
-        Positioned(
-          bottom: 73,
-          left: 120,
-          child: _buildMapMarker(),
-        ),
-        
-        // 중앙 마커 (선택된 위치) - 정확한 위치
-        Positioned(
-          top: 260,
-          left: 144,
+  List<Marker> _buildMarkers() {
+    return List<Marker>.generate(savedLocations.length, (index) {
+      final item = savedLocations[index];
+      final LatLng pos = LatLng(item['lat'] as double, item['lng'] as double);
+      final bool isSelected = _selectedIndex == index;
+      return Marker(
+        point: pos,
+        width: 26,
+        height: 26,
+        child: GestureDetector(
+          onTap: () => _onSelectLocation(index, animate: false),
           child: Container(
-            width: 54,
-            height: 18,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
-              color: const Color(0xFFD9D9D9),
-              borderRadius: BorderRadius.circular(9),
+              color: isSelected ? const Color(0xFF2E7DFF) : const Color(0xFF323232),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
             ),
-            child: const Center(
-              child: Text(
-                '현재 위치',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
+            child: Center(
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : const Color(0xFF8F8F8F),
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildFloatingActionButtons() {
+    return Stack(
+      children: [
+        // 나침반 버튼 (회전 초기화) - 위치: (17, 94)
+        Positioned(
+          left: 17,
+          top: 94,
+          child: _buildFloatingButton(
+            icon: Icons.explore_outlined,
+            onTap: _resetRotation,
+          ),
+        ),
+        // 하트 버튼 (선택 위치 즐겨찾기 토글) - 위치: (17, 146)
+        Positioned(
+          left: 17,
+          top: 146,
+          child: _buildFloatingButton(
+            icon: Icons.favorite,
+            onTap: _toggleFavorite,
+          ),
+        ),
+        // 위치 버튼 (내 위치로 이동) - 위치: (17, 461)
+        Positioned(
+          left: 17,
+          top: 461,
+          child: _buildFloatingButton(
+            icon: Icons.location_on,
+            onTap: _goToMyLocation,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMapMarker() {
-    return Container(
-      width: 22,
-      height: 26,
-      child: Stack(
-        children: [
-          // 마커 외곽선 (검은색 원)
-          Container(
-            width: 22,
-            height: 26,
-            decoration: const BoxDecoration(
-              color: Color(0xFF323232),
-              shape: BoxShape.circle,
-            ),
+  Widget _buildFloatingButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFFB0B0B0),
+            width: 1.5,
           ),
-          // 마커 내부 (회색 원)
-          Positioned(
-            top: 6,
-            left: 6,
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: Color(0xFF8F8F8F),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ],
+        ),
+        child: Icon(
+          icon,
+          color: Colors.black,
+          size: 20,
+        ),
       ),
     );
   }
 
-  Widget _buildBottomCard() {
-    return Container(
-      width: double.infinity,
-      height: 293,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF2F3F9),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
-        ),
-      ),
-      child: Column(
-        children: [
-          // 상단 핸들
-          Container(
-            width: 83,
-            height: 4,
-            margin: const EdgeInsets.only(top: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+  Widget _buildBottomInfoCard() {
+    // 드래그로 크기 조절 가능한 하단 시트 (항상 하단 정렬)
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.30,
+        minChildSize: 0.18,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFF2F3F9),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
             ),
-          ),
-          
-          // 카드 내용
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // 프로필 이미지
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0E0E0),
-                      borderRadius: BorderRadius.circular(8),
-                      image: const DecorationImage(
-                        image: NetworkImage('https://via.placeholder.com/64x64/FFB6C1/FFFFFF?text=Profile'),
-                        fit: BoxFit.cover,
+            child: CustomScrollView(
+              controller: scrollController,
+              physics: const ClampingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: Container(
+                      width: 83,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
-                  
-                  const SizedBox(width: 19),
-                  
-                  // 정보 영역
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // 텍스트 정보
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '김하숙',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '청소 완료율: 85%',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF666666),
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                '거리: 0.3km',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF666666),
-                                ),
-                              ),
-                            ],
-                          ),
+                ),
+                SliverToBoxAdapter(child: SizedBox(height: 12)),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  sliver: SliverList.separated(
+                    itemCount: savedLocations.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = savedLocations[index];
+                      return GestureDetector(
+                        onTap: () => _onSelectLocation(index),
+                        child: _buildSavedLocationItem(
+                          title: item['title'] as String,
+                          lastDate: item['lastDate'] as String,
+                          count: item['count'] as String,
+                          isFavorite: (item['favorite'] as bool?) ?? false,
                         ),
-                        
-                        // 좋아요 버튼
-                        Container(
-                          width: 24,
-                          height: 24,
-                          child: const Icon(
-                            Icons.favorite,
-                            color: Color(0xFFFF6B6B),
-                            size: 24,
-                          ),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+                SliverToBoxAdapter(child: SizedBox(height: 16)),
+              ],
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSavedLocationItem({
+    required String title,
+    required String lastDate,
+    required String count,
+    required bool isFavorite,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 92,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          // 썸네일 64x64
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.place, color: Colors.grey, size: 28),
+          ),
+          const SizedBox(width: 19),
+          // 텍스트들
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Text(
+                            '최근 청소 날짜',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFAAAAAA),
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              lastDate,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF4F4F4F),
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Text(
+                            '최근 청소 횟수',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFAAAAAA),
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              count,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF4F4F4F),
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: const Color(0xFF2E7DFF),
+            size: 20,
           ),
         ],
       ),
@@ -304,7 +433,6 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildBottomTabBar() {
     return Container(
       height: 90,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -332,7 +460,7 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF00FFAA) : const Color(0xFFAAAAAA),
+              color: isSelected ? const Color(0xFF2E7DFF) : const Color(0xFFAAAAAA),
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -341,7 +469,7 @@ class _MapScreenState extends State<MapScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? const Color(0xFF00FFAA) : const Color(0xFFAAAAAA),
+                color: isSelected ? const Color(0xFF2E7DFF) : const Color(0xFFAAAAAA),
               ),
             ),
           ],
@@ -350,7 +478,6 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // 탭 전환 기능
   void _onTabTapped(int index) {
     setState(() {
       selectedTabIndex = index;
@@ -375,7 +502,94 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  // 각 탭별 화면들
+  void _showCompassDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('나침반'),
+        content: const Text('나침반 기능이 여기에 표시됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFavoriteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('즐겨찾기'),
+        content: const Text('즐겨찾기 기능이 여기에 표시됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLocationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('위치'),
+        content: const Text('현재 위치 기능이 여기에 표시됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _goToMyLocation() async {
+    final permission = await Geolocator.checkPermission();
+    LocationPermission granted = permission;
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      granted = await Geolocator.requestPermission();
+    }
+    if (granted == LocationPermission.always || granted == LocationPermission.whileInUse) {
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final center = LatLng(pos.latitude, pos.longitude);
+      _mapController.move(center, _currentZoom);
+    } else {
+      if (!context.mounted) return;
+      _showLocationDialog();
+    }
+  }
+
+  void _resetRotation() {
+    // flutter_map 7.x는 기본 회전 미지원, 확대/이동 초기화로 대체
+    if (savedLocations.isEmpty) return;
+    final LatLng initial = LatLng(savedLocations.first['lat'] as double, savedLocations.first['lng'] as double);
+    _mapController.move(initial, 15);
+  }
+
+  void _toggleFavorite() {
+    if (_selectedIndex == null) return;
+    setState(() {
+      final current = savedLocations[_selectedIndex!]['favorite'] as bool? ?? false;
+      savedLocations[_selectedIndex!]['favorite'] = !current;
+    });
+  }
+
+  void _onSelectLocation(int index, {bool animate = true}) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    final item = savedLocations[index];
+    final LatLng center = LatLng(item['lat'] as double, item['lng'] as double);
+    _mapController.move(center, _currentZoom);
+  }
+
   void _showCleaningScreen(BuildContext context) {
     showDialog(
       context: context,
@@ -427,4 +641,4 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-} 
+}
