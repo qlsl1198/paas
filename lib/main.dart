@@ -5,6 +5,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/community_screen.dart';
 
 void main() {
   runApp(
@@ -36,6 +37,7 @@ class CleaningApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/map': (context) => const MapScreen(),
+        '/community': (context) => const CommunityScreen(),
       },
     );
   }

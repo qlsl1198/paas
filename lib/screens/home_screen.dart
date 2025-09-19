@@ -470,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _showCleaningScreen(context);
         break;
       case 3: // 커뮤니티
-        _showCommunityScreen(context);
+        Navigator.pushReplacementNamed(context, '/community');
         break;
       case 4: // 마이
         _showMyScreen(context);
@@ -593,21 +593,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showCommunityScreen(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('커뮤니티'),
-        content: const Text('청소 팁과 커뮤니티 게시판이 여기에 표시됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showMyScreen(BuildContext context) {
     showDialog(
