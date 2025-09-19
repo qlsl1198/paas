@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed && mounted && !_navigated) {
           _navigated = true;
-          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+          Navigator.of(context).pushNamed('/login');
         }
       })
       ..forward();
