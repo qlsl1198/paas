@@ -150,7 +150,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             top: 13,
             child: GestureDetector(
               onTap: () {
-                // 알림 화면으로 이동
+                Navigator.pushNamed(context, '/notification');
               },
               child: const Icon(
                 Icons.notifications_outlined,
@@ -463,19 +463,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
             // 게시글 헤더
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD9D9D9),
-                    borderRadius: BorderRadius.circular(2.5),
-                  ),
-                  child: Text(
-                    post['category'],
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+                Text(
+                  post['category'],
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -691,7 +684,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         // 이미 커뮤니티 화면에 있음
         break;
       case 4: // 마이
-        // 마이 화면으로 이동
+        Navigator.pushReplacementNamed(context, '/my');
         break;
     }
   }

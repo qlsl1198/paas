@@ -6,6 +6,11 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/community_screen.dart';
+import 'screens/my_screen.dart';
+import 'screens/profile_edit_screen.dart';
+import 'screens/drain_management_screen.dart';
+import 'screens/drain_registration_screen.dart';
+import 'screens/notification_screen.dart';
 
 void main() {
   runApp(
@@ -38,6 +43,11 @@ class CleaningApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/map': (context) => const MapScreen(),
         '/community': (context) => const CommunityScreen(),
+        '/my': (context) => const MyScreen(),
+        '/profile-edit': (context) => const ProfileEditScreen(),
+        '/drain-management': (context) => const DrainManagementScreen(),
+        '/drain-registration': (context) => const DrainRegistrationScreen(),
+        '/notification': (context) => const NotificationScreen(),
       },
     );
   }

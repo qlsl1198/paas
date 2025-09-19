@@ -494,10 +494,10 @@ class _MapScreenState extends State<MapScreen> {
         _showCleaningScreen(context);
         break;
       case 3: // 커뮤니티
-        _showCommunityScreen(context);
+        Navigator.pushReplacementNamed(context, '/community');
         break;
       case 4: // 마이
-        _showMyScreen(context);
+        Navigator.pushReplacementNamed(context, '/my');
         break;
     }
   }

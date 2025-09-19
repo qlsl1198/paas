@@ -139,10 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 16,
             top: 13,
             child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
-              ),
+              onTap: () => Navigator.pushNamed(context, '/notification'),
               child: const Icon(Icons.notifications_outlined, size: 24, color: Colors.black),
             ),
           ),
@@ -473,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, '/community');
         break;
       case 4: // 마이
-        _showMyScreen(context);
+        Navigator.pushReplacementNamed(context, '/my');
         break;
     }
   }
@@ -594,19 +591,4 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
-  void _showMyScreen(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('마이'),
-        content: const Text('개인 정보와 통계가 여기에 표시됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
 }
