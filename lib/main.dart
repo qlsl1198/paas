@@ -31,11 +31,67 @@ class CleaningApp extends StatelessWidget {
         useMaterial3: true,
       ),
       initialRoute: '/splash',
-      routes: {
-        '/splash': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/map': (context) => const MapScreen(),
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/splash':
+            return PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const SplashScreen(),
+              transitionDuration: const Duration(milliseconds: 300),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            );
+          case '/login':
+            return PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+              transitionDuration: const Duration(milliseconds: 1200),
+              reverseTransitionDuration: const Duration(milliseconds: 800),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                // 페이드인 + 스케일 조합으로 더 부드러운 효과
+                return FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOut,
+                  ),
+                  child: ScaleTransition(
+                    scale: Tween<double>(
+                      begin: 0.95,
+                      end: 1.0,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutBack,
+                    )),
+                    child: child,
+                  ),
+                );
+              },
+            );
+          case '/home':
+            return PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+              transitionDuration: const Duration(milliseconds: 300),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            );
+          default:
+            return MaterialPageRoute(
+              builder: (context) {
+                switch (settings.name) {
+                  case '/map':
+                    return const MapScreen();
+                  default:
+                    return const SplashScreen();
+                }
+              },
+            );
+        }
       },
     );
   }
